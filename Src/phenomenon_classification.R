@@ -3,6 +3,7 @@
 # load data
 # set environment paths
 wd <- "C:/Envimaster/AllemanVar/" # local path to repository
+# wd <- "V:/03 - Methoden/GitHub/AllemanVar" # local path to repository Maj-Brit
 dat <- file.path(wd,"Data/org")
 
 # load package
