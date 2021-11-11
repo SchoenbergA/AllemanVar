@@ -25,6 +25,8 @@ org <- openxlsx::read.xlsx(xlsxFile =file.path(dat,"WESTLICHE DATEN GESAMT.xlsx"
 
 #### SETUP ####
 
+### 1. Check dataframe for problems ####
+
 # check structure
 str(org) # all columns are characters
 
@@ -83,9 +85,6 @@ testCol <- function(df,n,mode="total"){
 testCol(org,0.01,"threshold")
 testCol(org,0.9,"threshold")
 
-# check for columns with only a few entries
-testCol(org,0.1,"treshold")
-
 #unique(org[,13])
 
 # what to do with those columns?
@@ -95,7 +94,7 @@ testCol(org,0.1,"treshold")
 # check "words" columns
 colnames(org)[] # "VI..Nach.welcher.Stadt.fährt.man.zum.Einkaufen." seems to be social data instead of "wording"
 
-# relocate "VI" to social data
+# relocate 
 org <- subset(org, select=c(2:17,145,1,18:21,22:144,146:ncol(org)))
 
 head(org)
@@ -140,23 +139,9 @@ length(which(tab>1)) # 3 entries are dublicates
 which(tab>1)
 
 which(org$sheet_nr=="Hag M 11")
-org[87:88,]
 which(org$sheet_nr=="Hag V 1")
 which(org$sheet_nr=="Hag W 16")
 
-
-# check for tailling whitespace
-any(grepl(" $", org$sheet_nr)==T)
-which(grepl(" $", org$sheet_nr)==T)
-org$sheet_nr[c(240,247,344,600)]
-# trim
-org$sheet_nr <-str_trim(org$sheet_nr, "right") 
-
-# 2.2 "ort"
-any(grepl(" $", org$place)==T)
-which(grepl(" $", org$place)==T)
-# trim
-org$place <-str_trim(org$place, "right") 
 
 
 ### 2.3 check long lat entries
@@ -179,12 +164,76 @@ which(nchar(org$LAT)==6) # 10 entries have 3 digits resulting in ca 100 m resolu
 which(nchar(org$LONG)==5)==which(nchar(org$LAT)==6)
 # no single point where both coordinates have lesser digits.
 
+# change CRS to UTM
+which(colnames(org)=="LONG")
+which(colnames(org)=="LAT")
+
+org$LONG <- as.numeric(org$LONG)
+org$LAT  <- as.numeric(org$LAT)
+wgs <- SpatialPointsDataFrame(org[,5:6],org)
+
+# set crs wgs84
+proj4string(wgs) <- "+proj=longlat +datum=WGS84 +no_defs"
+mapview(wgs)
+# project to utm32
+utm <- spTransform(wgs,"+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
+# test alternative way
+utm2 <- spTransform(wgs,CRS("+init=epsg:25832"))
+crs(utm)
+crs(utm2) # equal in R but Qgis works better with this one
+mapview(utm)
+mapview(utm2)
+
+# check effect
+plot(wgs)
+plot(utm) # slightly differnet
+plot(utm2) # equal to utm
+# get geometry
+geo <- geom(utm)
+# write UTM geometry
+utm$utm_e <- geo[,2]
+utm$utm_n <- geo[,3]
+
+geo2 <- geom(utm2)
+# write UTM geometry
+utm2$utm_e <- geo2[,2]
+utm2$utm_n <- geo2[,3]
+head(utm)
+head(utm2)
+
+utm
+utm2
+
+# check if coords are equal
+identical(utm$utm_n,utm2$utm_n)
+# check generall equal?
+identical(utm,utm2)# no
+all.equal(utm,utm2)# a comment in string
+
+proj4string(utm)
+proj4string(utm2)
 # possible solutions:
 # 1. add tailing zeros
 # 2. drop at least the LONG 2 digit entry
 # 3. drop all entries with digits <= 4
 
 ### 2.4 GID
+
+
+# check for tailling whitespace
+any(grepl(" $", org$sheet_nr)==T)
+which(grepl(" $", org$sheet_nr)==T)
+org$sheet_nr[c(240,247,344,600)]
+# trim
+org$sheet_nr <-str_trim(org$sheet_nr, "right") 
+
+# 2.2 "ort"
+any(grepl(" $", org$place)==T)
+which(grepl(" $", org$place)==T)
+# trim
+org$place <-str_trim(org$place, "right") 
+
+
 class(org$GID)
 as.numeric(org$GID)
 any(grepl(" $", org$GID)==T)
