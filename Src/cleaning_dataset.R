@@ -142,7 +142,7 @@ which(org$sheet_nr=="Hag M 11")
 which(org$sheet_nr=="Hag V 1")
 which(org$sheet_nr=="Hag W 16")
 
-
+org[87:88,]
 
 ### 2.3 check long lat entries
 
@@ -152,6 +152,10 @@ nchar(org$LONG) # entries have different precision: 2 up to 5 digits
 unique(nchar(org$LONG))
 which(nchar(org$LONG)==4) # entry 372 has only 2 digits resulting in ca 0,78 km resolution (could be up to 7,2 kilometer away from the point)
 which(nchar(org$LONG)==5) # 10 entries have 3 digits resulting in ca 78 m resolution (could be up to 772 meter away from the point)
+
+table(nchar(org$LONG))
+which(nchar(org$LONG)==18)
+org[12,1:5]
 
 # Latitude
 any(grepl(" $", org$LAT)==T)
@@ -221,23 +225,47 @@ proj4string(utm2)
 
 
 # check for tailling whitespace
-any(grepl(" $", org$sheet_nr)==T)
-which(grepl(" $", org$sheet_nr)==T)
-org$sheet_nr[c(240,247,344,600)]
-# trim
-org$sheet_nr <-str_trim(org$sheet_nr, "right") 
+df=org
+anyWS <- function(df){
+test <- lapply(1:ncol(df), function(x){
+  #any(grepl(" $", df[,x])==T)
+  length(which((grepl(" $", df[,x])==T)))
+})
+ if(any(test>0)){
+   cat(paste0(length(which(test>0))," columns contain tailling whitespaces"),sep = "\n")
+   cat(paste0(sum(unlist(test))," tailling whitespaces detected"),sep = "\n")
+  
+ } else {
+   print("No tailling Whitespaces detected in data")
+ }
+test2 <- lapply(1:ncol(df), function(x){
+  #any(grepl("^ ", df[,x])==T)
+  length(which((grepl("^ ", df[,x])==T)))
+})
+if(any(test2>0)){
+  cat(paste0(length(which(test2>0))," columns contain leading whitespaces"),sep = "\n")
+  cat(paste0(sum(unlist(test2))," leading whitespaces detected"),sep = "\n")
+  
+} else {
+  print("No leading Whitespaces detected in data")
+}
+}
 
-# 2.2 "ort"
-any(grepl(" $", org$place)==T)
-which(grepl(" $", org$place)==T)
-# trim
-org$place <-str_trim(org$place, "right") 
+anyWS(org[1:20,1:70])
+anyWS(org)
 
+trimWSdf <- function(df,mode){
+  for (i in 1:ncol(df)) {
+    df[,i] <-str_trim(df[,i], mode) 
+  }
+  return(df)
+}
 
+new <- trimWSdf(org,"both")
+anyWS(new)
+
+# GID
 class(org$GID)
-as.numeric(org$GID)
-any(grepl(" $", org$GID)==T)
-
 nrow(org)
 length(unique(org$GID))
 
@@ -248,7 +276,8 @@ which(tab>1)
 ### 3 Check social data ####
 
 # 3.1 rename column
-as.numeric(org$far)
+as.numeric(org$farmer_rate)
+org$age
 class(org$farmer_rate)
 
 unique(org$farmer_rate)
@@ -383,3 +412,106 @@ write.csv(IDlocWest1,"Data/IDlocWest1.csv",row.names = F)
 test <- read.csv("Data/IDlocWest1.csv")
 
 
+# check for empty columns and missing values
+
+### check for empty columns
+ecol <- sapply(org, function (k) all(is.na(k)))
+
+any(ecol)==T
+if(any(ecol)==T){which(ecol==T)}
+if(any(ecol)==T){length(which(ecol==T))} # 76 empty columns , most named X some with strings
+# remove empty columns
+if(any(ecol)==T){org <- org[!ecol]}
+
+
+# check occurrence of entries
+
+testCol <- function(df,n,mode="total"){
+  if(mode=="threshold"){
+    for(i in 1:ncol(df)){
+      nempty <-length(which(df[,i]=="" ))
+      nkempty <-length(which(df[,i]=="k.A." ))
+      naempty <-length(which(is.na(org[,i])))
+      if(nempty/nrow(df)>n){
+        per=round(nempty/nrow(df),digits=5)
+        print(paste0("column ' ",i," ' has ",per*100,"% of entries = ''     colname: ",colnames(df)[i]))
+      }
+      if(naempty/nrow(df)>n){
+        per=round(naempty/nrow(df),digits=5)
+        print(paste0("column ' ",i," ' has ",per*100,"% of entries = 'NA'   colname: ",colnames(df)[i]))
+        
+      }
+      if(nkempty/nrow(df)>n){
+        per=round(nkempty/nrow(df),digits=5)
+        print(paste0("column ' ",i," ' has ",per*100,"% of entries = 'k.A.' colname: ",colnames(df)[i]))
+        
+      }
+    }
+  } # end mode
+  if(mode=="total"){
+    for(i in 1:ncol(df)){
+      nempty <-length(which(df[,i]==""))
+      naempty <-length(which(is.na(org[,i])))
+      nkempty <-length(which(df[,i]=="k.A."))
+      per=round(nempty/nrow(df),digits=5)
+      print(paste0("column '",i,"' has ",per*100,"% of entries = ''     colname: ",colnames(df)[i]))
+      per=round(naempty/nrow(df),digits=5)
+      print(paste0("column '",i,"' has ",per*100,"% of entries = 'NA'   colname: ",colnames(df)[i]))
+      per=round(nkempty/nrow(df),digits=5)
+      print(paste0("column '",i,"' has ",per*100,"% of entries = 'k.A.' colname: ",colnames(df)[i]))
+      
+    }
+  } # end mode
+}
+
+# check columns
+testCol(org,0.01,"threshold")
+testCol(org,0.4,"threshold")
+
+# check spatial and organization columns
+testCol(org[1:7],0.00001,"threshold")
+
+# check for tailing white space ################################################
+# check for tailling whitespace
+any(grepl(" $", org$sheet_nr)==T)
+which(grepl(" $", org$sheet_nr)==T)
+org$sheet_nr[c(240,247,344,600)]
+
+test <- org
+any(grepl(" $",org,fixed = T))
+which(grepl(" $",org[,2],fixed = F))
+org[240,2]
+which(grepl(" $",org,fixed = T))
+any(grepl(" $", paste(test[,1],test[,
+                                    3]))==T)
+which(grepl(" $", paste(test[,2],test[,5]))==T)
+test[,2] <-str_trim(test[,2], "right") 
+
+cleanTail <- function(df,trim){
+  for (i in 1:ncol(df)) {
+    if(any(grepl(" $", df[,i])==T)){
+      cat(paste0("detected ",length(which(grepl(" $", df[,i])==T))," tailling whitespaces in column ",colnames(df)[i]),sep = "\n")
+    } else { cat("no tailling white spaces detected",sep = "\n")}
+    if(trim==T){
+      df[,i] <- str_trim(df[,i],"right")
+      print("trimmed")
+    }
+  } 
+  return(df)
+}
+
+cleanTail <- function(df,trim=F){
+  if(trim==F){
+    cat(paste0("detected ",length(which(grepl(" $", df[,i])==T))," tailling whitespaces in column ",colnames(df)[i]),sep = "\n")
+  }
+}
+
+test2 <-org
+cleanTail(test2, trim=F)
+test2 <-cleanTail(test2,trim=T)
+
+(grep(" $", c(org[,2])))
+grep(" $",paste(org[1:ncol(org)]))
+# trim
+org <-str_trim(org, "right") 
+test <- trimws(org)
