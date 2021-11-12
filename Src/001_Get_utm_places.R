@@ -30,11 +30,11 @@ org$LAT  <- as.numeric(org$LAT)
 colnames(org)[]
 
 # relocate 
-sub <- subset(org, select=c(4,6,7))
-colnames(sub) <- c("place", "long","lat")
+sub <- subset(org, select=c(2,4,6,7))
+colnames(sub) <- c("ID","place", "long","lat")
 
 # transform to spatialpoints
-wgs <- SpatialPointsDataFrame(sub[,2:3],sub)
+wgs <- SpatialPointsDataFrame(sub[,3:4],sub)
 
 # set crs wgs84
 proj4string(wgs) <- "+proj=longlat +datum=WGS84 +no_defs"
@@ -54,11 +54,11 @@ sub$utm_n <- geo[,3]
 
 # order utm 
 colnames(sub)
-places <- subset(sub, select=c(1,4,5))
+places <- subset(sub, select=c(1,2,5,6))
 head(places)
 # create output ################################################################
 
-places_utm <- SpatialPointsDataFrame(places[,2:3],places)
+places_utm <- SpatialPointsDataFrame(places[,3:4],places)
 crs(places_utm)
 proj4string(places_utm) <- CRS("+init=epsg:25832")
 crs(places_utm)
