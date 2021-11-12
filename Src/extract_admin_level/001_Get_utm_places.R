@@ -4,7 +4,7 @@
 # set environment paths
 wd <- "C:/Envimaster/AllemanVar/" # local path to repository
 dat <- file.path(wd,"Data/org")
-vec <- file.path(wd,"Data/Vector")
+vec <- file.path(wd,"Data/vector_admin")
 
 # load package
 require(openxlsx)

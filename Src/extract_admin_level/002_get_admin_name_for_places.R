@@ -3,7 +3,7 @@
 # load data
 # set environment paths
 wd <- "C:/Envimaster/AllemanVar/" # local path to repository
-vec <- file.path(wd,"Data/Vector")
+vec <- file.path(wd,"Data/vector_admin")
 
 # load package
 require(openxlsx)
@@ -13,7 +13,7 @@ require(dplyr)
 require(mapview)
 
 shp <- readOGR(file.path(vec,"places_utm.shp"))
-poly<- readOGR(file.path(vec,"admin_polygons.shp"))
+poly<- readOGR(file.path(vec,"admin_western_data.shp"))
 
 # check proj
 crs(shp)
