@@ -1,4 +1,4 @@
-### Get UTM projected places
+### Get UTM projected places for full AOI
 
 # load data
 # set environment paths
@@ -13,7 +13,7 @@ require(raster)
 require(rgdal)
 
 # load original data
-org <- openxlsx::read.xlsx(xlsxFile =file.path(dat,"WESTLICHE DATEN GESAMT.xlsx"))# I Data table preparation - cleaning up.
+org <- openxlsx::read.xlsx(xlsxFile =file.path(dat,"DATEN GESAMT.xlsx"))
 
 # check structure ##############################################################
 
@@ -31,7 +31,8 @@ colnames(org)[]
 
 # relocate 
 sub <- subset(org, select=c(2,4,6,7))
-colnames(sub) <- c("ID","place", "long","lat")
+colnames(sub)
+colnames(sub)<- c("ID","place", "long","lat")
 
 # transform to spatialpoints
 wgs <- SpatialPointsDataFrame(sub[,3:4],sub)
@@ -62,4 +63,4 @@ places_utm <- SpatialPointsDataFrame(places[,3:4],places)
 crs(places_utm)
 proj4string(places_utm) <- CRS("+init=epsg:25832")
 crs(places_utm)
-writeOGR(places_utm,file.path(vec,"places_utm.shp"),driver = "ESRI Shapefile",layer="utm") # shp with umt32
+writeOGR(places_utm,file.path(vec,"Places_full_utm.shp"),driver = "ESRI Shapefile",layer="utm") # shp with umt32

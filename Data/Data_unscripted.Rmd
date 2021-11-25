@@ -1,0 +1,18 @@
+---
+title: "Data unscripted"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data unscripted
+
+Documentary how Data was produced in Qgis without R-script
+
+# SRTM
+
+* Download SRTM tiles (in original wgs84)
+* merge Tiles
+* reproject to utm via NN (_nn)
